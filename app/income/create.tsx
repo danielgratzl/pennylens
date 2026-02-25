@@ -5,13 +5,12 @@ import {
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
 import { usePersons } from "@/hooks/usePersons";
-import { createIncome } from "@/hooks/useIncomeForMonth";
+import { createIncome } from "@/hooks/useIncome";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { category } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { parseCurrencyInput } from "@/utils/currency";
-import { currentMonth } from "@/utils/month";
 import { Colors } from "@/constants/colors";
 
 export default function CreateIncomeScreen() {
@@ -51,7 +50,6 @@ export default function CreateIncomeScreen() {
         amount,
         isYearly,
         currency: "CHF",
-        effectiveFrom: currentMonth(),
       });
       router.back();
     } catch (e: any) {

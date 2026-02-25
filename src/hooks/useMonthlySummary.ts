@@ -1,7 +1,6 @@
-import { useIncomeForMonth } from "./useIncomeForMonth";
-import { useCostsForMonth } from "./useCostsForMonth";
+import { useIncome } from "./useIncome";
+import { useCosts } from "./useCosts";
 import { usePersons } from "./usePersons";
-import { type YearMonth } from "@/utils/month";
 
 interface MonthlySummary {
   totalIncome: number;
@@ -11,11 +10,10 @@ interface MonthlySummary {
 
 export function useMonthlySummary(
   portfolioId: string | null,
-  month: YearMonth,
   viewMode: string
 ): MonthlySummary {
-  const { incomeItems } = useIncomeForMonth(portfolioId, month);
-  const { costItems } = useCostsForMonth(portfolioId, month);
+  const { incomeItems } = useIncome(portfolioId);
+  const { costItems } = useCosts(portfolioId);
   const { persons } = usePersons(portfolioId);
 
   const personCount = Math.max(persons.length, 1);
@@ -32,7 +30,6 @@ export function useMonthlySummary(
     const monthly = getMonthlyAmount(item.income.amount, item.income.isYearly);
 
     if (isPersonView) {
-      // Person view: include items assigned to this person, plus their share of shared items
       if (item.income.personId === viewMode) {
         totalIncome += monthly;
       } else if (item.income.personId === null) {

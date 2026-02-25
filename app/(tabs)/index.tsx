@@ -12,15 +12,13 @@ import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { SummaryCard } from "@/components/SummaryCard";
 import { Colors } from "@/constants/colors";
 import { formatCents, formatValue } from "@/utils/currency";
-import { currentMonth } from "@/utils/month";
 import { useEffect } from "react";
 
 export default function DashboardScreen() {
   const { activePortfolioId, viewMode, setActivePortfolio, privacyMode, togglePrivacyMode } = useAppStore();
   const { portfolios } = usePortfolios();
   const { persons } = usePersons(activePortfolioId);
-  const month = currentMonth();
-  const summary = useMonthlySummary(activePortfolioId, month, viewMode);
+  const summary = useMonthlySummary(activePortfolioId, viewMode);
   const { total: investmentTotal } = useInvestmentTotal(activePortfolioId, viewMode, persons.length);
   const { history: investmentHistory } = useInvestmentHistory(activePortfolioId, viewMode, persons.length);
 

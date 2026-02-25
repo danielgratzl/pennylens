@@ -2,15 +2,14 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
-import { useCostsForMonth } from "@/hooks/useCostsForMonth";
+import { useCosts } from "@/hooks/useCosts";
 import { ItemList } from "@/components/ItemList";
 import { AnimatedFab } from "@/components/AnimatedFab";
 import { Colors } from "@/constants/colors";
-import { currentMonth } from "@/utils/month";
 
 export default function CostsScreen() {
   const { activePortfolioId } = useAppStore();
-  const { costItems } = useCostsForMonth(activePortfolioId, currentMonth());
+  const { costItems } = useCosts(activePortfolioId);
 
   const items = costItems.map((i) => ({
     id: i.cost.id,
@@ -27,10 +26,7 @@ export default function CostsScreen() {
     <View style={styles.container}>
       <ItemList
         items={items}
-        onPress={(id) => {
-          const item = costItems.find((i) => i.cost.id === id);
-          if (item) router.push(`/cost/${item.cost.itemGroupId}`);
-        }}
+        onPress={(id) => router.push(`/cost/${id}`)}
         emptyMessage="No fixed costs yet"
       />
       {activePortfolioId && (

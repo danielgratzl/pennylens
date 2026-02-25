@@ -168,7 +168,7 @@ export default function RootLayout() {
           options={{ title: "Add Income", presentation: "modal" }}
         />
         <Stack.Screen
-          name="income/[groupId]"
+          name="income/[id]"
           options={{ title: "Income Details", presentation: "modal" }}
         />
         <Stack.Screen
@@ -176,7 +176,7 @@ export default function RootLayout() {
           options={{ title: "Add Fixed Cost", presentation: "modal" }}
         />
         <Stack.Screen
-          name="cost/[groupId]"
+          name="cost/[id]"
           options={{ title: "Cost Details", presentation: "modal" }}
         />
         <Stack.Screen

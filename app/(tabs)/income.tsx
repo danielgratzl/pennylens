@@ -2,15 +2,14 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
-import { useIncomeForMonth } from "@/hooks/useIncomeForMonth";
+import { useIncome } from "@/hooks/useIncome";
 import { ItemList } from "@/components/ItemList";
 import { AnimatedFab } from "@/components/AnimatedFab";
 import { Colors } from "@/constants/colors";
-import { currentMonth } from "@/utils/month";
 
 export default function IncomeScreen() {
   const { activePortfolioId } = useAppStore();
-  const { incomeItems } = useIncomeForMonth(activePortfolioId, currentMonth());
+  const { incomeItems } = useIncome(activePortfolioId);
 
   const items = incomeItems.map((i) => ({
     id: i.income.id,
@@ -27,10 +26,7 @@ export default function IncomeScreen() {
     <View style={styles.container}>
       <ItemList
         items={items}
-        onPress={(id) => {
-          const item = incomeItems.find((i) => i.income.id === id);
-          if (item) router.push(`/income/${item.income.itemGroupId}`);
-        }}
+        onPress={(id) => router.push(`/income/${id}`)}
         emptyMessage="No income items yet"
       />
       {activePortfolioId && (

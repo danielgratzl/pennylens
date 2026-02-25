@@ -1,8 +1,7 @@
-import { useIncomeForMonth } from "./useIncomeForMonth";
-import { useCostsForMonth } from "./useCostsForMonth";
+import { useIncome } from "./useIncome";
+import { useCosts } from "./useCosts";
 import { usePersons } from "./usePersons";
 import { useMonthlySummary } from "./useMonthlySummary";
-import { type YearMonth } from "@/utils/month";
 
 interface SankeyNode {
   id: string;
@@ -23,13 +22,12 @@ export interface SankeyData {
 
 export function useSankeyData(
   portfolioId: string | null,
-  month: YearMonth,
   viewMode: string
 ): SankeyData {
-  const { incomeItems } = useIncomeForMonth(portfolioId, month);
-  const { costItems } = useCostsForMonth(portfolioId, month);
+  const { incomeItems } = useIncome(portfolioId);
+  const { costItems } = useCosts(portfolioId);
   const { persons } = usePersons(portfolioId);
-  const summary = useMonthlySummary(portfolioId, month, viewMode);
+  const summary = useMonthlySummary(portfolioId, viewMode);
 
   const isPersonView = viewMode !== "combined";
   const personCount = Math.max(persons.length, 1);
