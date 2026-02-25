@@ -7,7 +7,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 function HeaderRight() {
   return (
     <TouchableOpacity
-      onPress={() => router.push("/settings/categories")}
+      onPress={() => router.push("/settings")}
       style={{ marginRight: 12 }}
     >
       <Ionicons name="settings-outline" size={22} color={Colors.textSecondary} />

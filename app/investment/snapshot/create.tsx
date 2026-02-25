@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { addSnapshot } from "@/hooks/useInvestmentAccounts";
 import { currentMonth } from "@/utils/month";
@@ -9,14 +9,30 @@ export default function CreateSnapshotScreen() {
   const { accountId } = useLocalSearchParams<{ accountId: string }>();
   const [valueStr, setValueStr] = useState("");
   const [month, setMonth] = useState(currentMonth());
+  const [errors, setErrors] = useState<{ value?: string }>({});
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!valueStr) {
+      e.value = "Value is required";
+    } else {
+      const value = parseFloat(valueStr.replace(",", "."));
+      if (isNaN(value) || value <= 0) e.value = "Value must be greater than 0";
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleCreate = async () => {
-    if (!accountId || !valueStr) return;
+    if (!validate() || !accountId) return;
     const value = parseFloat(valueStr.replace(",", "."));
-    if (isNaN(value)) return;
 
-    await addSnapshot(accountId, month, value);
-    router.back();
+    try {
+      await addSnapshot(accountId, month, value);
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to record snapshot");
+    }
   };
 
   return (
@@ -32,13 +48,14 @@ export default function CreateSnapshotScreen() {
 
       <Text style={styles.label}>Value (CHF)</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.value && styles.inputError]}
         value={valueStr}
         onChangeText={setValueStr}
         placeholder="0.00"
         placeholderTextColor={Colors.textTertiary}
         keyboardType="decimal-pad"
       />
+      {errors.value && <Text style={styles.errorText}>{errors.value}</Text>}
 
       <TouchableOpacity style={styles.button} onPress={handleCreate}>
         <Text style={styles.buttonText}>Record Snapshot</Text>
@@ -54,6 +71,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: 10, padding: 14, fontSize: 16,
     color: Colors.text, borderWidth: 1, borderColor: Colors.border,
   },
+  inputError: { borderColor: Colors.danger },
+  errorText: { fontSize: 12, color: Colors.danger, marginTop: 4 },
   button: {
     backgroundColor: Colors.primary, padding: 16, borderRadius: 12,
     alignItems: "center", marginTop: 24,

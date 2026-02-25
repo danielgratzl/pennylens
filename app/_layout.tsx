@@ -1,10 +1,11 @@
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
 import { getExpoDb, getDb } from "@/db";
 import { seedDatabase } from "@/db/seed";
+import { useAppStore } from "@/store/appStore";
 
 function useMigrations() {
   const [ready, setReady] = useState(false);
@@ -129,6 +130,7 @@ function useMigrations() {
 }
 
 export default function RootLayout() {
+  const dbVersion = useAppStore((s) => s.dbVersion);
   const { ready, error } = useMigrations();
 
   if (error) {
@@ -152,6 +154,7 @@ export default function RootLayout() {
     <>
       <StatusBar style="dark" />
       <Stack
+        key={dbVersion}
         screenOptions={{
           headerStyle: { backgroundColor: Colors.background },
           headerTintColor: Colors.text,

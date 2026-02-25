@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Colors } from "@/constants/colors";
 import { formatCents } from "@/utils/currency";
 
@@ -33,31 +34,35 @@ export function ItemList({ items, onPress, emptyMessage = "No items yet" }: Item
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => onPress?.(item.id)}
-          activeOpacity={0.7}
+      renderItem={({ item, index }) => (
+        <Animated.View
+          entering={index < 10 ? FadeInDown.delay(index * 50).duration(300) : undefined}
         >
-          <View style={styles.rowLeft}>
-            {item.categoryColor && (
-              <View style={[styles.dot, { backgroundColor: item.categoryColor }]} />
-            )}
-            <View>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.meta}>
-                {item.categoryName ?? "Uncategorized"}
-                {item.personName ? ` · ${item.personName}` : " · Shared"}
-              </Text>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => onPress?.(item.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.rowLeft}>
+              {item.categoryColor && (
+                <View style={[styles.dot, { backgroundColor: item.categoryColor }]} />
+              )}
+              <View>
+                <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.meta}>
+                  {item.categoryName ?? "Uncategorized"}
+                  {item.personName ? ` · ${item.personName}` : " · Shared"}
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.rowRight}>
-            <Text style={styles.amount}>
-              {formatCents(item.isYearly ? Math.round(item.amount / 12) : item.amount, item.currency)}
-            </Text>
-            {item.isYearly && <Text style={styles.yearly}>/mo (yearly)</Text>}
-          </View>
-        </TouchableOpacity>
+            <View style={styles.rowRight}>
+              <Text style={styles.amount}>
+                {formatCents(item.isYearly ? Math.round(item.amount / 12) : item.amount, item.currency)}
+              </Text>
+              {item.isYearly && <Text style={styles.yearly}>/mo (yearly)</Text>}
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       )}
       contentContainerStyle={styles.list}
     />

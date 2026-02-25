@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, FlatList } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { income, person, category } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { deleteIncome } from "@/hooks/useIncomeForMonth";
 import { Colors } from "@/constants/colors";
 import { formatCents } from "@/utils/currency";
 import { displayMonth } from "@/utils/month";
@@ -22,6 +23,31 @@ export default function IncomeDetailScreen() {
       .orderBy(desc(income.effectiveFrom)),
     [groupId]
   );
+
+  const handleDelete = () => {
+    const items = versions ?? [];
+    Alert.alert(
+      "Delete Income",
+      `Delete all ${items.length} version(s) of this income item? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              for (const v of items) {
+                await deleteIncome(v.income.id);
+              }
+              router.back();
+            } catch (e: any) {
+              Alert.alert("Error", e.message ?? "Failed to delete income");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -54,6 +80,13 @@ export default function IncomeDetailScreen() {
             <Text style={styles.emptyText}>No versions found</Text>
           </View>
         }
+        ListFooterComponent={
+          (versions ?? []).length > 0 ? (
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+              <Text style={styles.deleteText}>Delete Income</Text>
+            </TouchableOpacity>
+          ) : null
+        }
       />
     </View>
   );
@@ -77,4 +110,16 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, color: Colors.textTertiary, marginTop: 4 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: Colors.textTertiary },
+  deleteButton: {
+    backgroundColor: Colors.danger,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  deleteText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

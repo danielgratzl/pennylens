@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
 import { usePersons } from "@/hooks/usePersons";
@@ -22,32 +22,44 @@ export default function CreateInvestmentScreen() {
   const [institution, setInstitution] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ name?: string }>({});
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!name.trim()) e.name = "Account name is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleCreate = async () => {
-    if (!activePortfolioId || !name.trim()) return;
+    if (!validate() || !activePortfolioId) return;
 
-    await createInvestmentAccount({
-      portfolioId: activePortfolioId,
-      personId: selectedPersonId,
-      categoryId: selectedCategoryId,
-      name: name.trim(),
-      accountType: accountType.trim() || undefined,
-      institution: institution.trim() || undefined,
-    });
-
-    router.back();
+    try {
+      await createInvestmentAccount({
+        portfolioId: activePortfolioId,
+        personId: selectedPersonId,
+        categoryId: selectedCategoryId,
+        name: name.trim(),
+        accountType: accountType.trim() || undefined,
+        institution: institution.trim() || undefined,
+      });
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to create account");
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.label}>Account Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.name && styles.inputError]}
         value={name}
         onChangeText={setName}
         placeholder="e.g. Vanguard FTSE All-World"
         placeholderTextColor={Colors.textTertiary}
       />
+      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
       <Text style={styles.label}>Account Type (optional)</Text>
       <TextInput
@@ -124,6 +136,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: 10, padding: 14, fontSize: 16,
     color: Colors.text, borderWidth: 1, borderColor: Colors.border,
   },
+  inputError: { borderColor: Colors.danger },
+  errorText: { fontSize: 12, color: Colors.danger, marginTop: 4 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,

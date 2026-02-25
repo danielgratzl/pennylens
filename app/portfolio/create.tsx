@@ -1,23 +1,22 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { createPortfolio } from "@/hooks/usePortfolios";
 import { createPerson } from "@/hooks/usePersons";
 import { useAppStore } from "@/store/appStore";
-import { Colors } from "@/constants/colors";
-
-const PERSON_COLORS = ["#6366F1", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6"];
+import { Colors, PersonColors } from "@/constants/colors";
 
 export default function CreatePortfolioScreen() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [persons, setPersons] = useState<{ name: string; color: string }[]>([
-    { name: "", color: PERSON_COLORS[0] },
+    { name: "", color: PersonColors[0] },
   ]);
+  const [errors, setErrors] = useState<{ name?: string }>({});
   const { setActivePortfolio } = useAppStore();
 
   const addPerson = () => {
-    setPersons([...persons, { name: "", color: PERSON_COLORS[persons.length % PERSON_COLORS.length] }]);
+    setPersons([...persons, { name: "", color: PersonColors[persons.length % PersonColors.length] }]);
   };
 
   const updatePersonName = (index: number, value: string) => {
@@ -31,32 +30,44 @@ export default function CreatePortfolioScreen() {
     setPersons(persons.filter((_, i) => i !== index));
   };
 
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!name.trim()) e.name = "Portfolio name is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const handleCreate = async () => {
-    if (!name.trim()) return;
+    if (!validate()) return;
 
-    const portfolioId = await createPortfolio(name.trim(), description.trim() || undefined);
+    try {
+      const portfolioId = await createPortfolio(name.trim(), description.trim() || undefined);
 
-    for (let i = 0; i < persons.length; i++) {
-      const p = persons[i];
-      if (p.name.trim()) {
-        await createPerson(portfolioId, p.name.trim(), p.color, i);
+      for (let i = 0; i < persons.length; i++) {
+        const p = persons[i];
+        if (p.name.trim()) {
+          await createPerson(portfolioId, p.name.trim(), p.color, i);
+        }
       }
-    }
 
-    setActivePortfolio(portfolioId);
-    router.back();
+      setActivePortfolio(portfolioId);
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to create portfolio");
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Portfolio Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.name && styles.inputError]}
         value={name}
         onChangeText={setName}
         placeholder="e.g. Our Household"
         placeholderTextColor={Colors.textTertiary}
       />
+      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
       <Text style={styles.label}>Description (optional)</Text>
       <TextInput
@@ -123,6 +134,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  inputError: { borderColor: Colors.danger },
+  errorText: { fontSize: 12, color: Colors.danger, marginTop: 4 },
   personRow: {
     flexDirection: "row",
     alignItems: "center",

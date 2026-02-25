@@ -1,6 +1,14 @@
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
-import { portfolio } from "@/db/schema";
+import {
+  portfolio,
+  person,
+  income,
+  fixedCost,
+  investmentAccount,
+  accountSnapshot,
+  category,
+} from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { generateId } from "@/utils/uuid";
 
@@ -25,4 +33,22 @@ export async function updatePortfolio(id: string, data: { name?: string; descrip
 
 export async function archivePortfolio(id: string) {
   await db.update(portfolio).set({ archived: true }).where(eq(portfolio.id, id));
+}
+
+export async function deletePortfolio(id: string) {
+  // Cascade: snapshots → accounts → income → costs → persons → portfolio categories → portfolio
+  const accounts = await db
+    .select({ id: investmentAccount.id })
+    .from(investmentAccount)
+    .where(eq(investmentAccount.portfolioId, id));
+
+  for (const a of accounts) {
+    await db.delete(accountSnapshot).where(eq(accountSnapshot.accountId, a.id));
+  }
+  await db.delete(investmentAccount).where(eq(investmentAccount.portfolioId, id));
+  await db.delete(income).where(eq(income.portfolioId, id));
+  await db.delete(fixedCost).where(eq(fixedCost.portfolioId, id));
+  await db.delete(person).where(eq(person.portfolioId, id));
+  await db.delete(category).where(eq(category.portfolioId, id));
+  await db.delete(portfolio).where(eq(portfolio.id, id));
 }

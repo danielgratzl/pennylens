@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch,
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
@@ -26,46 +26,61 @@ export default function CreateIncomeScreen() {
   const [isYearly, setIsYearly] = useState(false);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ name?: string; amount?: string }>({});
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!name.trim()) e.name = "Name is required";
+    const amount = parseCurrencyInput(amountStr);
+    if (!amountStr) e.amount = "Amount is required";
+    else if (amount === null || amount <= 0) e.amount = "Amount must be greater than 0";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   const handleCreate = async () => {
-    if (!activePortfolioId || !name.trim() || !amountStr) return;
-    const amount = parseCurrencyInput(amountStr);
-    if (amount === null || amount <= 0) return;
+    if (!validate() || !activePortfolioId) return;
+    const amount = parseCurrencyInput(amountStr)!;
 
-    await createIncome({
-      portfolioId: activePortfolioId,
-      personId: selectedPersonId,
-      categoryId: selectedCategoryId,
-      name: name.trim(),
-      amount,
-      isYearly,
-      currency: "CHF",
-      effectiveFrom: currentMonth(),
-    });
-
-    router.back();
+    try {
+      await createIncome({
+        portfolioId: activePortfolioId,
+        personId: selectedPersonId,
+        categoryId: selectedCategoryId,
+        name: name.trim(),
+        amount,
+        isYearly,
+        currency: "CHF",
+        effectiveFrom: currentMonth(),
+      });
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to create income");
+    }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.label}>Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.name && styles.inputError]}
         value={name}
         onChangeText={setName}
         placeholder="e.g. Monthly Salary"
         placeholderTextColor={Colors.textTertiary}
       />
+      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
       <Text style={styles.label}>Amount (CHF)</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, errors.amount && styles.inputError]}
         value={amountStr}
         onChangeText={setAmountStr}
         placeholder="0.00"
         placeholderTextColor={Colors.textTertiary}
         keyboardType="decimal-pad"
       />
+      {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Yearly amount</Text>
@@ -129,6 +144,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: 10, padding: 14, fontSize: 16,
     color: Colors.text, borderWidth: 1, borderColor: Colors.border,
   },
+  inputError: { borderColor: Colors.danger },
+  errorText: { fontSize: 12, color: Colors.danger, marginTop: 4 },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16 },
   switchLabel: { fontSize: 15, color: Colors.text },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

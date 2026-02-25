@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/expo-sqlite";
 import { openDatabaseSync } from "expo-sqlite";
 import * as schema from "./schema";
 
-const DB_NAME = "pennylens.db";
+export const DB_NAME = "pennylens.db";
 
 let _expoDb: ReturnType<typeof openDatabaseSync> | null = null;
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
@@ -29,5 +29,13 @@ export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
     return (getDb() as any)[prop];
   },
 });
+
+export function closeDb() {
+  if (_expoDb) {
+    _expoDb.closeSync();
+    _expoDb = null;
+  }
+  _db = null;
+}
 
 export { schema };

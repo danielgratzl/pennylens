@@ -45,16 +45,20 @@ export default function CategoriesScreen() {
 
   const handleAdd = async (type: CategoryType) => {
     if (!newName.trim()) return;
-    await db.insert(category).values({
-      id: generateId(),
-      portfolioId: null,
-      type,
-      name: newName.trim(),
-      icon: null,
-      color: TYPE_COLORS[type],
-    });
-    setNewName("");
-    setAddingType(null);
+    try {
+      await db.insert(category).values({
+        id: generateId(),
+        portfolioId: null,
+        type,
+        name: newName.trim(),
+        icon: null,
+        color: TYPE_COLORS[type],
+      });
+      setNewName("");
+      setAddingType(null);
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to add category");
+    }
   };
 
   const handleRename = (cat: { id: string; name: string }) => {
@@ -63,10 +67,14 @@ export default function CategoriesScreen() {
       undefined,
       async (text) => {
         if (text?.trim()) {
-          await db
-            .update(category)
-            .set({ name: text.trim() })
-            .where(eq(category.id, cat.id));
+          try {
+            await db
+              .update(category)
+              .set({ name: text.trim() })
+              .where(eq(category.id, cat.id));
+          } catch (e: any) {
+            Alert.alert("Error", e.message ?? "Failed to rename category");
+          }
         }
       },
       "plain-text",
@@ -82,7 +90,11 @@ export default function CategoriesScreen() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          await db.delete(category).where(eq(category.id, cat.id));
+          try {
+            await db.delete(category).where(eq(category.id, cat.id));
+          } catch (e: any) {
+            Alert.alert("Error", e.message ?? "Failed to delete category");
+          }
         },
       },
     ]);

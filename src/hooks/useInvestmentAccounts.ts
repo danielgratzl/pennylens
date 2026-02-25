@@ -193,3 +193,7 @@ export async function deleteInvestmentAccount(id: string) {
   await db.delete(accountSnapshot).where(eq(accountSnapshot.accountId, id));
   await db.delete(investmentAccount).where(eq(investmentAccount.id, id));
 }
+
+export async function deleteSnapshot(id: string) {
+  await db.delete(accountSnapshot).where(eq(accountSnapshot.id, id));
+}

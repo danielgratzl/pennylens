@@ -1,10 +1,11 @@
 import React from "react";
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
 import { useInvestmentAccounts } from "@/hooks/useInvestmentAccounts";
+import { AnimatedFab } from "@/components/AnimatedFab";
 import { Colors } from "@/constants/colors";
-import { formatValue } from "@/utils/currency";
+import Animated, { FadeInDown } from "react-native-reanimated";
 
 export default function InvestmentsScreen() {
   const { activePortfolioId } = useAppStore();
@@ -15,21 +16,25 @@ export default function InvestmentsScreen() {
       <FlatList
         data={accounts}
         keyExtractor={(item) => item.account.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/investment/${item.account.id}`)}
-            activeOpacity={0.7}
+        renderItem={({ item, index }) => (
+          <Animated.View
+            entering={index < 10 ? FadeInDown.delay(index * 50).duration(300) : undefined}
           >
-            <View>
-              <Text style={styles.accountName}>{item.account.name}</Text>
-              <Text style={styles.meta}>
-                {item.category?.name ?? "Uncategorized"}
-                {item.person ? ` · ${item.person.name}` : ""}
-                {item.account.institution ? ` · ${item.account.institution}` : ""}
-              </Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => router.push(`/investment/${item.account.id}`)}
+              activeOpacity={0.7}
+            >
+              <View>
+                <Text style={styles.accountName}>{item.account.name}</Text>
+                <Text style={styles.meta}>
+                  {item.category?.name ?? "Uncategorized"}
+                  {item.person ? ` · ${item.person.name}` : ""}
+                  {item.account.institution ? ` · ${item.account.institution}` : ""}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
         )}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
@@ -39,12 +44,7 @@ export default function InvestmentsScreen() {
         }
       />
       {activePortfolioId && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => router.push("/investment/create")}
-        >
-          <Text style={styles.fabText}>+</Text>
-        </TouchableOpacity>
+        <AnimatedFab onPress={() => router.push("/investment/create")} />
       )}
     </View>
   );
@@ -86,26 +86,5 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: Colors.textTertiary,
-  },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  fabText: {
-    fontSize: 28,
-    color: Colors.white,
-    lineHeight: 30,
   },
 });
