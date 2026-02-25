@@ -68,7 +68,24 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Data</Text>
+      {activePortfolioId && (
+        <>
+          <Text style={styles.sectionTitle}>Portfolio</Text>
+
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() =>
+              router.push(`/portfolio/${activePortfolioId}/settings`)
+            }
+          >
+            <Ionicons name="settings-outline" size={20} color={Colors.textSecondary} />
+            <Text style={styles.rowText}>Configuration</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+        </>
+      )}
+
+      <Text style={[styles.sectionTitle, activePortfolioId ? { marginTop: 24 } : undefined]}>App</Text>
 
       <TouchableOpacity
         style={styles.row}
@@ -79,27 +96,14 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
       </TouchableOpacity>
 
-      {activePortfolioId && (
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() =>
-            router.push(`/portfolio/${activePortfolioId}/settings`)
-          }
-        >
-          <Ionicons name="briefcase-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.rowText}>Portfolio Settings</Text>
-          <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
-        </TouchableOpacity>
-      )}
-
       <TouchableOpacity style={styles.row} onPress={handleExport} disabled={busy}>
-        <Ionicons name="download-outline" size={20} color={Colors.textSecondary} />
+        <Ionicons name="push-outline" size={20} color={Colors.textSecondary} />
         <Text style={styles.rowText}>Export Database</Text>
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.row} onPress={handleImport} disabled={busy}>
-        <Ionicons name="push-outline" size={20} color={Colors.textSecondary} />
+        <Ionicons name="download-outline" size={20} color={Colors.textSecondary} />
         <Text style={styles.rowText}>Import Database</Text>
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
       </TouchableOpacity>
@@ -116,7 +120,7 @@ export default function SettingsScreen() {
         </Text>
       )}
 
-      <Text style={[styles.sectionTitle, { marginTop: 32 }]}>About</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 24 }]}>About</Text>
 
       <View style={styles.row}>
         <Ionicons name="information-circle-outline" size={20} color={Colors.textSecondary} />
