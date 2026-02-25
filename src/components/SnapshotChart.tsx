@@ -46,7 +46,7 @@ export function SnapshotChart({ snapshots, height = 200, redacted }: Props) {
         startOpacity={0.3}
         endOpacity={0.05}
         areaChart
-        curved
+
         hideRules
         hideYAxisText={redacted}
         yAxisTextStyle={styles.axisText}

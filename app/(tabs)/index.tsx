@@ -11,7 +11,7 @@ import { SnapshotChart } from "@/components/SnapshotChart";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { SummaryCard } from "@/components/SummaryCard";
 import { Colors } from "@/constants/colors";
-import { formatCents, formatValue } from "@/utils/currency";
+import { formatCentsShort, formatValueShort } from "@/utils/currency";
 import { useEffect } from "react";
 
 export default function DashboardScreen() {
@@ -61,30 +61,33 @@ export default function DashboardScreen() {
       <View style={styles.cards}>
         <SummaryCard
           label="Income"
-          value={formatCents(summary.totalIncome)}
+          value={formatCentsShort(summary.totalIncome)}
+          unit="CHF"
           color={Colors.income}
           redacted={privacyMode}
         />
         <SummaryCard
-          label="Fixed Costs"
-          value={formatCents(summary.totalCosts)}
+          label="Costs"
+          value={formatCentsShort(summary.totalCosts)}
+          unit="CHF"
           color={Colors.expense}
           redacted={privacyMode}
         />
         <SummaryCard
           label="Untracked"
-          value={formatCents(summary.untracked)}
+          value={formatCentsShort(summary.untracked)}
+          unit="CHF"
           color={Colors.textTertiary}
-          subtitle="Income − Costs"
+          info="Income minus fixed costs"
           redacted={privacyMode}
         />
       </View>
 
       <SummaryCard
         label="Investments"
-        value={formatValue(investmentTotal)}
+        value={formatValueShort(investmentTotal)}
+        unit="CHF"
         color={Colors.investment}
-        subtitle="Total across all accounts"
         redacted={privacyMode}
       />
 
