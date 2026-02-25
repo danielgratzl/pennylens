@@ -1,0 +1,106 @@
+import { useIncomeForMonth } from "./useIncomeForMonth";
+import { useCostsForMonth } from "./useCostsForMonth";
+import { usePersons } from "./usePersons";
+import { useMonthlySummary } from "./useMonthlySummary";
+import { type YearMonth } from "@/utils/month";
+
+interface SankeyNode {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface SankeyLink {
+  source: string;
+  target: string;
+  value: number;
+}
+
+export interface SankeyData {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+}
+
+export function useSankeyData(
+  portfolioId: string | null,
+  month: YearMonth,
+  viewMode: string
+): SankeyData {
+  const { incomeItems } = useIncomeForMonth(portfolioId, month);
+  const { costItems } = useCostsForMonth(portfolioId, month);
+  const { persons } = usePersons(portfolioId);
+  const summary = useMonthlySummary(portfolioId, month, viewMode);
+
+  const isPersonView = viewMode !== "combined";
+  const personCount = Math.max(persons.length, 1);
+
+  const nodes: SankeyNode[] = [];
+  const links: SankeyLink[] = [];
+  const nodeSet = new Set<string>();
+
+  function addNode(id: string, name: string, color: string) {
+    if (!nodeSet.has(id)) {
+      nodeSet.add(id);
+      nodes.push({ id, name, color });
+    }
+  }
+
+  // Central "Budget" node
+  addNode("budget", "Budget", "#6366F1");
+
+  // Income sources -> Budget
+  for (const item of incomeItems) {
+    let monthly = item.income.isYearly
+      ? Math.round(item.income.amount / 12)
+      : item.income.amount;
+
+    if (isPersonView) {
+      if (item.income.personId === viewMode) {
+        // belongs to this person, use full amount
+      } else if (item.income.personId === null) {
+        monthly = Math.round(monthly / personCount);
+      } else {
+        continue; // belongs to another person
+      }
+    }
+
+    if (monthly <= 0) continue;
+
+    const nodeId = `income-${item.income.id}`;
+    const color = item.category?.color ?? "#4CAF50";
+    addNode(nodeId, item.income.name, color);
+    links.push({ source: nodeId, target: "budget", value: monthly });
+  }
+
+  // Budget -> Cost categories
+  for (const item of costItems) {
+    let monthly = item.cost.isYearly
+      ? Math.round(item.cost.amount / 12)
+      : item.cost.amount;
+
+    if (isPersonView) {
+      if (item.cost.personId === viewMode) {
+        // belongs to this person
+      } else if (item.cost.personId === null) {
+        monthly = Math.round(monthly / personCount);
+      } else {
+        continue;
+      }
+    }
+
+    if (monthly <= 0) continue;
+
+    const nodeId = `cost-${item.cost.id}`;
+    const color = item.category?.color ?? "#F44336";
+    addNode(nodeId, item.cost.name, color);
+    links.push({ source: "budget", target: nodeId, value: monthly });
+  }
+
+  // Budget -> Untracked (remainder)
+  if (summary.untracked > 0) {
+    addNode("untracked", "Untracked", "#94A3B8");
+    links.push({ source: "budget", target: "untracked", value: summary.untracked });
+  }
+
+  return { nodes, links };
+}
