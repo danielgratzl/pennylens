@@ -7,13 +7,18 @@ interface SummaryCardProps {
   value: string;
   color?: string;
   subtitle?: string;
+  redacted?: boolean;
 }
 
-export function SummaryCard({ label, value, color, subtitle }: SummaryCardProps) {
+export function SummaryCard({ label, value, color, subtitle, redacted }: SummaryCardProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, color ? { color } : undefined]}>{value}</Text>
+      <View>
+        <Text style={[styles.value, color ? { color } : undefined, redacted && styles.redactedText]}>
+          {redacted ? value.replace(/[0-9]/g, "•") : value}
+        </Text>
+      </View>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
@@ -40,6 +45,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: Colors.text,
+  },
+  redactedText: {
+    opacity: 0.3,
   },
   subtitle: {
     fontSize: 12,

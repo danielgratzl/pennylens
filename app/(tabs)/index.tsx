@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppStore } from "@/store/appStore";
 import { useMonthlySummary } from "@/hooks/useMonthlySummary";
 import { usePortfolios } from "@/hooks/usePortfolios";
@@ -15,7 +16,7 @@ import { currentMonth } from "@/utils/month";
 import { useEffect } from "react";
 
 export default function DashboardScreen() {
-  const { activePortfolioId, viewMode, setActivePortfolio } = useAppStore();
+  const { activePortfolioId, viewMode, setActivePortfolio, privacyMode, togglePrivacyMode } = useAppStore();
   const { portfolios } = usePortfolios();
   const { persons } = usePersons(activePortfolioId);
   const month = currentMonth();
@@ -46,24 +47,38 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <ViewModeToggle />
+      <View style={styles.topRow}>
+        <View style={styles.toggleWrapper}>
+          <ViewModeToggle />
+        </View>
+        <TouchableOpacity onPress={togglePrivacyMode} style={styles.privacyButton}>
+          <Ionicons
+            name={privacyMode ? "eye-off-outline" : "eye-outline"}
+            size={20}
+            color={Colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.cards}>
         <SummaryCard
           label="Income"
           value={formatCents(summary.totalIncome)}
           color={Colors.income}
+          redacted={privacyMode}
         />
         <SummaryCard
           label="Fixed Costs"
           value={formatCents(summary.totalCosts)}
           color={Colors.expense}
+          redacted={privacyMode}
         />
         <SummaryCard
           label="Untracked"
           value={formatCents(summary.untracked)}
           color={Colors.textTertiary}
           subtitle="Income − Costs"
+          redacted={privacyMode}
         />
       </View>
 
@@ -72,12 +87,13 @@ export default function DashboardScreen() {
         value={formatValue(investmentTotal)}
         color={Colors.investment}
         subtitle="Total across all accounts"
+        redacted={privacyMode}
       />
 
       {investmentHistory.length > 0 && (
         <View style={styles.chartSection}>
           <Text style={styles.chartTitle}>Investment History</Text>
-          <SnapshotChart snapshots={investmentHistory} height={180} />
+          <SnapshotChart snapshots={investmentHistory} height={180} redacted={privacyMode} />
         </View>
       )}
     </ScrollView>
@@ -92,6 +108,18 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 32,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  toggleWrapper: {
+    flex: 1,
+  },
+  privacyButton: {
+    padding: 8,
+    marginRight: 4,
   },
   cards: {
     flexDirection: "row",

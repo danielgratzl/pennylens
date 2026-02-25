@@ -1,14 +1,16 @@
-import React from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from "react-native";
+import React, { useState } from "react";
+import {
+  View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, Switch,
+} from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { income, person, category } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { deleteIncome } from "@/hooks/useIncomeForMonth";
+import { deleteIncome, editIncomeFromMonth } from "@/hooks/useIncomeForMonth";
 import { Colors } from "@/constants/colors";
-import { formatCents } from "@/utils/currency";
-import { displayMonth } from "@/utils/month";
+import { formatCents, parseCurrencyInput } from "@/utils/currency";
+import { displayMonth, currentMonth } from "@/utils/month";
 
 export default function IncomeDetailScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
@@ -23,6 +25,47 @@ export default function IncomeDetailScreen() {
       .orderBy(desc(income.effectiveFrom)),
     [groupId]
   );
+
+  const { data: categories } = useLiveQuery(
+    db.select().from(category).where(eq(category.type, "income"))
+  );
+
+  const [editing, setEditing] = useState(false);
+  const [editAmount, setEditAmount] = useState("");
+  const [editIsYearly, setEditIsYearly] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<string | null>(null);
+
+  const current = (versions ?? [])[0];
+
+  const startEdit = () => {
+    if (!current) return;
+    setEditAmount((current.income.amount / 100).toString());
+    setEditIsYearly(current.income.isYearly);
+    setEditCategoryId(current.income.categoryId);
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!current) return;
+    const amount = parseCurrencyInput(editAmount);
+    if (amount === null || amount <= 0) {
+      Alert.alert("Invalid Amount", "Amount must be greater than 0.");
+      return;
+    }
+    try {
+      await editIncomeFromMonth(current.income.id, currentMonth(), {
+        name: current.income.name,
+        amount,
+        isYearly: editIsYearly,
+        currency: current.income.currency,
+        personId: current.income.personId,
+        categoryId: editCategoryId,
+      });
+      setEditing(false);
+    } catch (e: any) {
+      Alert.alert("Error", e.message ?? "Failed to save changes");
+    }
+  };
 
   const handleDelete = () => {
     const items = versions ?? [];
@@ -56,22 +99,77 @@ export default function IncomeDetailScreen() {
         keyExtractor={(item) => item.income.id}
         renderItem={({ item, index }) => (
           <View style={[styles.card, index === 0 && styles.cardActive]}>
-            {index === 0 && <Text style={styles.badge}>Current</Text>}
+            {index === 0 && (
+              <View style={styles.cardHeader}>
+                <Text style={styles.badge}>Current</Text>
+                {!editing && (
+                  <TouchableOpacity onPress={startEdit}>
+                    <Text style={styles.editLink}>Edit</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
             <Text style={styles.name}>{item.income.name}</Text>
-            <Text style={styles.amount}>
-              {formatCents(item.income.amount, item.income.currency)}
-              {item.income.isYearly ? " /year" : " /month"}
-            </Text>
-            <Text style={styles.period}>
-              {displayMonth(item.income.effectiveFrom)}
-              {item.income.effectiveUntil
-                ? ` – ${displayMonth(item.income.effectiveUntil)}`
-                : " – Present"}
-            </Text>
-            <Text style={styles.meta}>
-              {item.category?.name ?? "No category"}
-              {item.person ? ` · ${item.person.name}` : " · Shared"}
-            </Text>
+
+            {index === 0 && editing ? (
+              <View style={styles.editSection}>
+                <Text style={styles.editLabel}>Amount (CHF)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editAmount}
+                  onChangeText={setEditAmount}
+                  keyboardType="decimal-pad"
+                  placeholder="0.00"
+                  placeholderTextColor={Colors.textTertiary}
+                />
+
+                <View style={styles.switchRow}>
+                  <Text style={styles.editLabel}>Yearly amount</Text>
+                  <Switch value={editIsYearly} onValueChange={setEditIsYearly} trackColor={{ true: Colors.primary }} />
+                </View>
+
+                <Text style={styles.editLabel}>Category</Text>
+                <View style={styles.chips}>
+                  {(categories ?? []).map((c) => (
+                    <TouchableOpacity
+                      key={c.id}
+                      style={[styles.chip, editCategoryId === c.id && styles.chipActive]}
+                      onPress={() => setEditCategoryId(c.id)}
+                    >
+                      <Text style={[styles.chipText, editCategoryId === c.id && styles.chipTextActive]}>
+                        {c.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.editActions}>
+                  <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                    <Text style={styles.saveText}>Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setEditing(false)}>
+                    <Text style={styles.cancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.amount}>
+                  {formatCents(item.income.amount, item.income.currency)}
+                  {item.income.isYearly ? " /year" : " /month"}
+                </Text>
+                <Text style={styles.period}>
+                  {displayMonth(item.income.effectiveFrom)}
+                  {item.income.effectiveUntil
+                    ? ` – ${displayMonth(item.income.effectiveUntil)}`
+                    : " – Present"}
+                </Text>
+                <Text style={styles.meta}>
+                  {item.category?.name ?? "No category"}
+                  {item.person ? ` · ${item.person.name}` : " · Shared"}
+                </Text>
+              </>
+            )}
           </View>
         )}
         contentContainerStyle={styles.list}
@@ -100,26 +198,54 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   cardActive: { borderColor: Colors.primary },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   badge: {
     fontSize: 12, fontWeight: "600", color: Colors.primary,
-    marginBottom: 8, textTransform: "uppercase",
+    textTransform: "uppercase",
+  },
+  editLink: {
+    fontSize: 14, fontWeight: "600", color: Colors.primary,
   },
   name: { fontSize: 18, fontWeight: "600", color: Colors.text },
   amount: { fontSize: 16, color: Colors.income, marginTop: 4 },
   period: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
   meta: { fontSize: 13, color: Colors.textTertiary, marginTop: 4 },
+  editSection: { marginTop: 12 },
+  editLabel: {
+    fontSize: 13, fontWeight: "600", color: Colors.textSecondary, marginBottom: 6, marginTop: 10,
+  },
+  input: {
+    backgroundColor: Colors.background, borderRadius: 10, padding: 12, fontSize: 16,
+    color: Colors.text, borderWidth: 1, borderColor: Colors.border,
+  },
+  switchRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10,
+  },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: Colors.surfaceSecondary, borderWidth: 1, borderColor: Colors.border,
+  },
+  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  chipText: { fontSize: 14, color: Colors.textSecondary },
+  chipTextActive: { color: Colors.white },
+  editActions: {
+    flexDirection: "row", alignItems: "center", gap: 16, marginTop: 16,
+  },
+  saveButton: {
+    backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10,
+  },
+  saveText: { color: Colors.white, fontSize: 15, fontWeight: "600" },
+  cancelText: { color: Colors.textSecondary, fontSize: 15 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: Colors.textTertiary },
   deleteButton: {
-    backgroundColor: Colors.danger,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
+    backgroundColor: Colors.danger, padding: 16, borderRadius: 12, alignItems: "center", marginTop: 8,
   },
-  deleteText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  deleteText: { color: Colors.white, fontSize: 16, fontWeight: "600" },
 });

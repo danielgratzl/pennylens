@@ -13,9 +13,10 @@ interface Snapshot {
 interface Props {
   snapshots: Snapshot[];
   height?: number;
+  redacted?: boolean;
 }
 
-export function SnapshotChart({ snapshots, height = 200 }: Props) {
+export function SnapshotChart({ snapshots, height = 200, redacted }: Props) {
   if (snapshots.length === 0) {
     return (
       <View style={styles.empty}>
@@ -29,7 +30,7 @@ export function SnapshotChart({ snapshots, height = 200 }: Props) {
   const chartData = sorted.map((s) => ({
     value: s.value,
     label: displayMonth(s.snapshotMonth),
-    dataPointText: formatValue(s.value),
+    dataPointText: redacted ? "" : formatValue(s.value),
   }));
 
   return (
@@ -47,6 +48,7 @@ export function SnapshotChart({ snapshots, height = 200 }: Props) {
         areaChart
         curved
         hideRules
+        hideYAxisText={redacted}
         yAxisTextStyle={styles.axisText}
         xAxisLabelTextStyle={styles.axisLabel}
         spacing={60}

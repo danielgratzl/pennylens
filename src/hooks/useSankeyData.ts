@@ -72,7 +72,8 @@ export function useSankeyData(
     links.push({ source: nodeId, target: "budget", value: monthly });
   }
 
-  // Budget -> Cost categories
+  // Budget -> Cost categories (aggregated)
+  const categoryTotals = new Map<string, { name: string; color: string; total: number }>();
   for (const item of costItems) {
     let monthly = item.cost.isYearly
       ? Math.round(item.cost.amount / 12)
@@ -90,10 +91,21 @@ export function useSankeyData(
 
     if (monthly <= 0) continue;
 
-    const nodeId = `cost-${item.cost.id}`;
-    const color = item.category?.color ?? "#F44336";
-    addNode(nodeId, item.cost.name, color);
-    links.push({ source: "budget", target: nodeId, value: monthly });
+    const catId = item.category?.id ?? "uncategorized";
+    const catName = item.category?.name ?? "Uncategorized";
+    const catColor = item.category?.color ?? "#F44336";
+    const existing = categoryTotals.get(catId);
+    if (existing) {
+      existing.total += monthly;
+    } else {
+      categoryTotals.set(catId, { name: catName, color: catColor, total: monthly });
+    }
+  }
+
+  for (const [catId, cat] of categoryTotals) {
+    const nodeId = `cost-cat-${catId}`;
+    addNode(nodeId, cat.name, cat.color);
+    links.push({ source: "budget", target: nodeId, value: cat.total });
   }
 
   // Budget -> Untracked (remainder)
