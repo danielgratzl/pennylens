@@ -53,6 +53,7 @@ export function SnapshotChart({ snapshots, height = 200, redacted }: Props) {
         xAxisLabelTextStyle={styles.axisLabel}
         spacing={60}
         noOfSections={4}
+        scrollToEnd
       />
     </View>
   );
