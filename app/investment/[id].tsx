@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSnapshots, deleteInvestmentAccount, deleteSnapshot } from "@/hooks/useInvestmentAccounts";
+import { useBaseCurrency } from "@/hooks/useCurrencies";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { investmentAccount } from "@/db/schema";
@@ -14,11 +15,13 @@ import { displayMonth } from "@/utils/month";
 export default function InvestmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { snapshots } = useSnapshots(id ?? "");
+  const baseCurrency = useBaseCurrency();
   const { data: accountData } = useLiveQuery(
     db.select({ currency: investmentAccount.currency }).from(investmentAccount).where(eq(investmentAccount.id, id ?? "")),
     [id]
   );
   const accountCurrency = accountData?.[0]?.currency ?? "CHF";
+  const isForeignCurrency = accountCurrency !== baseCurrency;
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -85,7 +88,12 @@ export default function InvestmentDetailScreen() {
             onLongPress={() => handleDeleteSnapshot(item.id, item.snapshotMonth)}
           >
             <Text style={styles.month}>{displayMonth(item.snapshotMonth)}</Text>
-            <Text style={styles.value}>{formatValue(item.value, accountCurrency)}</Text>
+            <View style={styles.valueColumn}>
+              <Text style={styles.value}>{formatValue(item.value, accountCurrency)}</Text>
+              {isForeignCurrency && item.baseValue != null && (
+                <Text style={styles.baseValue}>{formatValue(item.baseValue, baseCurrency)}</Text>
+              )}
+            </View>
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.list}
@@ -118,7 +126,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, padding: 14, borderRadius: 10, marginBottom: 8,
   },
   month: { fontSize: 15, color: Colors.text },
+  valueColumn: { alignItems: "flex-end" as const },
   value: { fontSize: 15, fontWeight: "600", color: Colors.investment },
+  baseValue: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   empty: { padding: 40, alignItems: "center" },
   emptyText: { fontSize: 15, color: Colors.textTertiary },
   deleteButton: {

@@ -18,5 +18,6 @@ export const accountSnapshot = sqliteTable("account_snapshot", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull().references(() => investmentAccount.id),
   snapshotMonth: text("snapshot_month").notNull(), // YYYY-MM
-  value: real("value").notNull(), // actual monetary value (not cents, for precision with decimals)
+  value: real("value").notNull(), // value in the account's currency
+  baseValue: real("base_value"), // value converted to base currency (null = same as value)
 });

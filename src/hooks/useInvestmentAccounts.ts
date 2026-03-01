@@ -24,15 +24,15 @@ export function useInvestmentAccounts(portfolioId: string | null) {
   return { accounts: data ?? [] };
 }
 
-export function useInvestmentTotal(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1, currencyRates?: Map<string, number>) {
+export function useInvestmentTotal(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1) {
   const { data: allSnapshots } = useLiveQuery(
     db
       .select({
         accountId: accountSnapshot.accountId,
         snapshotMonth: accountSnapshot.snapshotMonth,
+        baseValue: accountSnapshot.baseValue,
         value: accountSnapshot.value,
         personId: investmentAccount.personId,
-        currency: investmentAccount.currency,
       })
       .from(accountSnapshot)
       .innerJoin(investmentAccount, eq(accountSnapshot.accountId, investmentAccount.id))
@@ -46,45 +46,40 @@ export function useInvestmentTotal(portfolioId: string | null, viewMode: string 
     const latestMonth = new Map<string, string>();
     const latestValue = new Map<string, number>();
     const accountPerson = new Map<string, string | null>();
-    const accountCurrency = new Map<string, string>();
     for (const s of snapshots) {
       accountPerson.set(s.accountId, s.personId);
-      accountCurrency.set(s.accountId, s.currency);
       const cur = latestMonth.get(s.accountId);
       if (!cur || s.snapshotMonth > cur) {
         latestMonth.set(s.accountId, s.snapshotMonth);
-        latestValue.set(s.accountId, s.value);
+        latestValue.set(s.accountId, s.baseValue ?? s.value);
       }
     }
     let sum = 0;
     for (const [accountId, value] of latestValue) {
       const pid = accountPerson.get(accountId);
-      const cur = accountCurrency.get(accountId) ?? "CHF";
-      const rate = currencyRates?.get(cur) ?? 1;
-      const converted = value * rate;
       if (viewMode === "combined") {
-        sum += converted;
+        sum += value;
       } else if (pid === viewMode) {
-        sum += converted;
+        sum += value;
       } else if (pid === null && personCount > 0) {
-        sum += converted / personCount;
+        sum += value / personCount;
       }
     }
     return sum;
-  }, [allSnapshots, viewMode, personCount, currencyRates]);
+  }, [allSnapshots, viewMode, personCount]);
 
   return { total };
 }
 
-export function useInvestmentHistory(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1, currencyRates?: Map<string, number>) {
+export function useInvestmentHistory(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1) {
   const { data: allSnapshots } = useLiveQuery(
     db
       .select({
         accountId: accountSnapshot.accountId,
         snapshotMonth: accountSnapshot.snapshotMonth,
+        baseValue: accountSnapshot.baseValue,
         value: accountSnapshot.value,
         personId: investmentAccount.personId,
-        currency: investmentAccount.currency,
       })
       .from(accountSnapshot)
       .innerJoin(investmentAccount, eq(accountSnapshot.accountId, investmentAccount.id))
@@ -96,12 +91,10 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
     const snapshots = allSnapshots ?? [];
     if (snapshots.length === 0) return [];
 
-    // Build person and currency mapping per account
+    // Build person mapping per account
     const accountPerson = new Map<string, string | null>();
-    const accountCurrency = new Map<string, string>();
     for (const s of snapshots) {
       accountPerson.set(s.accountId, s.personId);
-      accountCurrency.set(s.accountId, s.currency);
     }
 
     // Filter accounts based on viewMode
@@ -114,8 +107,7 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
 
     if (relevantSnapshots.length === 0) return [];
 
-    // Group by month, summing across all accounts
-    // For months where an account has no snapshot, carry forward its last known value
+    // Group by month, summing across all accounts (using base-currency values)
     const accountMonths = new Map<string, Map<string, number>>();
     const allMonths = new Set<string>();
 
@@ -126,7 +118,7 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
         monthMap = new Map();
         accountMonths.set(s.accountId, monthMap);
       }
-      monthMap.set(s.snapshotMonth, s.value);
+      monthMap.set(s.snapshotMonth, s.baseValue ?? s.value);
     }
 
     const sortedMonths = [...allMonths].sort();
@@ -137,8 +129,6 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
       for (const [accountId, monthMap] of accountMonths) {
         const pid = accountPerson.get(accountId);
         const isShared = pid === null;
-        const cur = accountCurrency.get(accountId) ?? "CHF";
-        const rate = currencyRates?.get(cur) ?? 1;
         // Find the latest value at or before this month
         let val = 0;
         for (const m of sortedMonths) {
@@ -149,13 +139,13 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
         if (isShared && viewMode !== "combined" && personCount > 0) {
           val = val / personCount;
         }
-        total += val * rate;
+        total += val;
       }
       result.push({ snapshotMonth: month, value: total });
     }
 
     return result;
-  }, [allSnapshots, viewMode, personCount, currencyRates]);
+  }, [allSnapshots, viewMode, personCount]);
 
   return { history };
 }
@@ -196,9 +186,15 @@ export async function createInvestmentAccount(data: {
   return id;
 }
 
-export async function addSnapshot(accountId: string, month: YearMonth, value: number) {
+export async function addSnapshot(accountId: string, month: YearMonth, value: number, baseValue?: number) {
   const id = generateId();
-  await db.insert(accountSnapshot).values({ id, accountId, snapshotMonth: month, value });
+  await db.insert(accountSnapshot).values({
+    id,
+    accountId,
+    snapshotMonth: month,
+    value,
+    baseValue: baseValue ?? value,
+  });
   return id;
 }
 

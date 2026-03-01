@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { addSnapshot } from "@/hooks/useInvestmentAccounts";
+import { useBaseCurrency, useCurrencyRates } from "@/hooks/useCurrencies";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { investmentAccount } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { currentMonth } from "@/utils/month";
+import { formatValue } from "@/utils/currency";
 import { Colors } from "@/constants/colors";
 
 export default function CreateSnapshotScreen() {
@@ -16,17 +18,25 @@ export default function CreateSnapshotScreen() {
     [accountId]
   );
   const accountCurrency = accountData?.[0]?.currency ?? "CHF";
+  const baseCurrency = useBaseCurrency();
+  const currencyRates = useCurrencyRates();
+  const isForeignCurrency = accountCurrency !== baseCurrency;
+  const rate = currencyRates.get(accountCurrency) ?? 1;
+
   const [valueStr, setValueStr] = useState("");
   const [month, setMonth] = useState(currentMonth());
   const [errors, setErrors] = useState<{ value?: string }>({});
+
+  const parsedValue = parseFloat(valueStr.replace(",", "."));
+  const hasValidValue = !isNaN(parsedValue) && parsedValue > 0;
+  const convertedValue = hasValidValue ? parsedValue * rate : null;
 
   const validate = () => {
     const e: typeof errors = {};
     if (!valueStr) {
       e.value = "Value is required";
-    } else {
-      const value = parseFloat(valueStr.replace(",", "."));
-      if (isNaN(value) || value <= 0) e.value = "Value must be greater than 0";
+    } else if (!hasValidValue) {
+      e.value = "Value must be greater than 0";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -34,10 +44,10 @@ export default function CreateSnapshotScreen() {
 
   const handleCreate = async () => {
     if (!validate() || !accountId) return;
-    const value = parseFloat(valueStr.replace(",", "."));
 
     try {
-      await addSnapshot(accountId, month, value);
+      const baseValue = isForeignCurrency ? parsedValue * rate : parsedValue;
+      await addSnapshot(accountId, month, parsedValue, baseValue);
       router.back();
     } catch (e: any) {
       Alert.alert("Error", e.message ?? "Failed to record snapshot");
@@ -66,6 +76,12 @@ export default function CreateSnapshotScreen() {
       />
       {errors.value && <Text style={styles.errorText}>{errors.value}</Text>}
 
+      {isForeignCurrency && convertedValue !== null && (
+        <Text style={styles.conversionPreview}>
+          = {formatValue(convertedValue, baseCurrency)} (rate: {rate})
+        </Text>
+      )}
+
       <TouchableOpacity style={styles.button} onPress={handleCreate}>
         <Text style={styles.buttonText}>Record Snapshot</Text>
       </TouchableOpacity>
@@ -82,6 +98,12 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: Colors.danger },
   errorText: { fontSize: 12, color: Colors.danger, marginTop: 4 },
+  conversionPreview: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: "500",
+    marginTop: 6,
+  },
   button: {
     backgroundColor: Colors.primary, padding: 16, borderRadius: 12,
     alignItems: "center", marginTop: 24,

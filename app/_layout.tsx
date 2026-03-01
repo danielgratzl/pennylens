@@ -128,6 +128,15 @@ function useMigrations() {
           // Column already exists
         }
 
+        // Add base_value column to account_snapshot (idempotent)
+        try {
+          expoDb.execSync(`ALTER TABLE "account_snapshot" ADD COLUMN "base_value" real`);
+        } catch (_) {
+          // Column already exists
+        }
+        // Backfill: existing snapshots are all in base currency, so base_value = value
+        expoDb.execSync(`UPDATE "account_snapshot" SET "base_value" = "value" WHERE "base_value" IS NULL`);
+
         // Seed base_currency for existing installs (idempotent)
         expoDb.execSync(`INSERT OR IGNORE INTO "app_meta" ("key", "value") VALUES ('base_currency', 'CHF')`);
 

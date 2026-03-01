@@ -7,7 +7,7 @@ import { useMonthlySummary } from "@/hooks/useMonthlySummary";
 import { usePortfolios } from "@/hooks/usePortfolios";
 import { usePersons } from "@/hooks/usePersons";
 import { useInvestmentTotal, useInvestmentHistory } from "@/hooks/useInvestmentAccounts";
-import { useBaseCurrency, useCurrencyRates } from "@/hooks/useCurrencies";
+import { useBaseCurrency } from "@/hooks/useCurrencies";
 import { SnapshotChart } from "@/components/SnapshotChart";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { SummaryCard } from "@/components/SummaryCard";
@@ -20,10 +20,9 @@ export default function DashboardScreen() {
   const { portfolios } = usePortfolios();
   const { persons } = usePersons(activePortfolioId);
   const baseCurrency = useBaseCurrency();
-  const currencyRates = useCurrencyRates();
   const summary = useMonthlySummary(activePortfolioId, viewMode);
-  const { total: investmentTotal } = useInvestmentTotal(activePortfolioId, viewMode, persons.length, currencyRates);
-  const { history: investmentHistory } = useInvestmentHistory(activePortfolioId, viewMode, persons.length, currencyRates);
+  const { total: investmentTotal } = useInvestmentTotal(activePortfolioId, viewMode, persons.length);
+  const { history: investmentHistory } = useInvestmentHistory(activePortfolioId, viewMode, persons.length);
 
   useEffect(() => {
     if (!activePortfolioId && portfolios.length > 0) {
