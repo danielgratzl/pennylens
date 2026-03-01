@@ -200,11 +200,11 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="cost/create"
-          options={{ title: "Add Fixed Cost", presentation: "modal" }}
+          options={{ title: "Add Expense", presentation: "modal" }}
         />
         <Stack.Screen
           name="cost/[id]"
-          options={{ title: "Cost Details", presentation: "modal" }}
+          options={{ title: "Expense Details", presentation: "modal" }}
         />
         <Stack.Screen
           name="investment/create"

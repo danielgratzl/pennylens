@@ -64,8 +64,8 @@ export default function CostDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Cost",
-      "Delete this cost item? This cannot be undone.",
+      "Delete Expense",
+      "Delete this expense? This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -76,7 +76,7 @@ export default function CostDetailScreen() {
               await deleteCost(item!.cost.id);
               router.back();
             } catch (e: any) {
-              Alert.alert("Error", e.message ?? "Failed to delete cost");
+              Alert.alert("Error", e.message ?? "Failed to delete expense");
             }
           },
         },
@@ -87,7 +87,7 @@ export default function CostDetailScreen() {
   if (!item) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.emptyText}>Cost item not found</Text>
+        <Text style={styles.emptyText}>Expense not found</Text>
       </View>
     );
   }
@@ -160,7 +160,7 @@ export default function CostDetailScreen() {
       </View>
 
       <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteText}>Delete Cost</Text>
+        <Text style={styles.deleteText}>Delete Expense</Text>
       </TouchableOpacity>
     </ScrollView>
   );

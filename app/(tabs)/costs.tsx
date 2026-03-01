@@ -27,7 +27,7 @@ export default function CostsScreen() {
       <ItemList
         items={items}
         onPress={(id) => router.push(`/cost/${id}`)}
-        emptyMessage="No fixed costs yet"
+        emptyMessage="No expenses yet"
       />
       {activePortfolioId && (
         <AnimatedFab onPress={() => router.push("/cost/create")} />

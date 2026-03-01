@@ -19,7 +19,7 @@ type CategoryType = "income" | "fixed_cost" | "investment";
 
 const TYPE_LABELS: Record<CategoryType, string> = {
   income: "Income",
-  fixed_cost: "Fixed Costs",
+  fixed_cost: "Expenses",
   investment: "Investments",
 };
 

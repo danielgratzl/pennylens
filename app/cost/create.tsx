@@ -53,7 +53,7 @@ export default function CreateCostScreen() {
       });
       router.back();
     } catch (e: any) {
-      Alert.alert("Error", e.message ?? "Failed to create cost");
+      Alert.alert("Error", e.message ?? "Failed to create expense");
     }
   };
 
@@ -85,28 +85,32 @@ export default function CreateCostScreen() {
         <Switch value={isYearly} onValueChange={setIsYearly} trackColor={{ true: Colors.primary }} />
       </View>
 
-      <Text style={styles.label}>Person</Text>
-      <View style={styles.chips}>
-        <TouchableOpacity
-          style={[styles.chip, selectedPersonId === null && styles.chipActive]}
-          onPress={() => setSelectedPersonId(null)}
-        >
-          <Text style={[styles.chipText, selectedPersonId === null && styles.chipTextActive]}>
-            Shared
-          </Text>
-        </TouchableOpacity>
-        {persons.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            style={[styles.chip, selectedPersonId === p.id && styles.chipActive]}
-            onPress={() => setSelectedPersonId(p.id)}
-          >
-            <Text style={[styles.chipText, selectedPersonId === p.id && styles.chipTextActive]}>
-              {p.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {persons.length > 1 && (
+        <>
+          <Text style={styles.label}>Person</Text>
+          <View style={styles.chips}>
+            <TouchableOpacity
+              style={[styles.chip, selectedPersonId === null && styles.chipActive]}
+              onPress={() => setSelectedPersonId(null)}
+            >
+              <Text style={[styles.chipText, selectedPersonId === null && styles.chipTextActive]}>
+                Shared
+              </Text>
+            </TouchableOpacity>
+            {persons.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.chip, selectedPersonId === p.id && styles.chipActive]}
+                onPress={() => setSelectedPersonId(p.id)}
+              >
+                <Text style={[styles.chipText, selectedPersonId === p.id && styles.chipTextActive]}>
+                  {p.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       <Text style={styles.label}>Category</Text>
       <View style={styles.chips}>
@@ -128,7 +132,7 @@ export default function CreateCostScreen() {
       </View>
 
       <TouchableOpacity style={styles.button} onPress={handleCreate}>
-        <Text style={styles.buttonText}>Add Fixed Cost</Text>
+        <Text style={styles.buttonText}>Add Expense</Text>
       </TouchableOpacity>
     </ScrollView>
   );

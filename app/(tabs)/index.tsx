@@ -69,7 +69,7 @@ export default function DashboardScreen() {
           redacted={privacyMode}
         />
         <SummaryCard
-          label="Costs"
+          label="Expenses"
           value={formatCentsShort(summary.totalCosts)}
           unit={baseCurrency}
           color={Colors.expense}
@@ -80,7 +80,7 @@ export default function DashboardScreen() {
           value={formatCentsShort(summary.untracked)}
           unit={baseCurrency}
           color={Colors.textTertiary}
-          info="Income minus fixed costs"
+          info="Income minus expenses"
           redacted={privacyMode}
         />
       </View>

@@ -50,7 +50,7 @@ export default function TabLayout() {
         name="costs"
         options={{
           tabBarIcon: ({ color, size }) => <Ionicons name="arrow-up-outline" size={size} color={color} />,
-          tabBarLabel: "Costs",
+          tabBarLabel: "Expenses",
         }}
       />
       <Tabs.Screen
@@ -63,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sankey"
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="git-merge-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="swap-horizontal-outline" size={size} color={color} />,
           tabBarLabel: "Flow",
         }}
       />

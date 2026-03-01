@@ -198,6 +198,19 @@ export async function addSnapshot(accountId: string, month: YearMonth, value: nu
   return id;
 }
 
+export async function updateInvestmentAccount(
+  id: string,
+  data: {
+    name?: string;
+    accountType?: string | null;
+    institution?: string | null;
+    personId?: string | null;
+    categoryId?: string | null;
+  }
+) {
+  await db.update(investmentAccount).set(data).where(eq(investmentAccount.id, id));
+}
+
 export async function deleteInvestmentAccount(id: string) {
   await db.delete(accountSnapshot).where(eq(accountSnapshot.accountId, id));
   await db.delete(investmentAccount).where(eq(investmentAccount.id, id));

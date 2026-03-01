@@ -58,7 +58,7 @@ export default function PortfolioSettingsScreen() {
   const handleDeletePortfolio = () => {
     Alert.alert(
       "Delete Portfolio",
-      "This will permanently delete this portfolio and ALL its data (income, costs, investments, persons). This cannot be undone.",
+      "This will permanently delete this portfolio and ALL its data (income, expenses, investments, persons). This cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -102,7 +102,7 @@ export default function PortfolioSettingsScreen() {
   };
 
   const handleDeletePerson = (p: { id: string; name: string }) => {
-    Alert.alert("Delete Person", `Delete "${p.name}"? Income, costs, and investments assigned to this person will lose their person assignment.`, [
+    Alert.alert("Delete Person", `Delete "${p.name}"? Income, expenses, and investments assigned to this person will lose their person assignment.`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",

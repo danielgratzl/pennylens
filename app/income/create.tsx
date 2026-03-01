@@ -85,28 +85,32 @@ export default function CreateIncomeScreen() {
         <Switch value={isYearly} onValueChange={setIsYearly} trackColor={{ true: Colors.primary }} />
       </View>
 
-      <Text style={styles.label}>Person</Text>
-      <View style={styles.chips}>
-        <TouchableOpacity
-          style={[styles.chip, selectedPersonId === null && styles.chipActive]}
-          onPress={() => setSelectedPersonId(null)}
-        >
-          <Text style={[styles.chipText, selectedPersonId === null && styles.chipTextActive]}>
-            Shared
-          </Text>
-        </TouchableOpacity>
-        {persons.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            style={[styles.chip, selectedPersonId === p.id && styles.chipActive]}
-            onPress={() => setSelectedPersonId(p.id)}
-          >
-            <Text style={[styles.chipText, selectedPersonId === p.id && styles.chipTextActive]}>
-              {p.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {persons.length > 1 && (
+        <>
+          <Text style={styles.label}>Person</Text>
+          <View style={styles.chips}>
+            <TouchableOpacity
+              style={[styles.chip, selectedPersonId === null && styles.chipActive]}
+              onPress={() => setSelectedPersonId(null)}
+            >
+              <Text style={[styles.chipText, selectedPersonId === null && styles.chipTextActive]}>
+                Shared
+              </Text>
+            </TouchableOpacity>
+            {persons.map((p) => (
+              <TouchableOpacity
+                key={p.id}
+                style={[styles.chip, selectedPersonId === p.id && styles.chipActive]}
+                onPress={() => setSelectedPersonId(p.id)}
+              >
+                <Text style={[styles.chipText, selectedPersonId === p.id && styles.chipTextActive]}>
+                  {p.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       <Text style={styles.label}>Category</Text>
       <View style={styles.chips}>
