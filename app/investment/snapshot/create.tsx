@@ -7,7 +7,8 @@ import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { investmentAccount } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { currentMonth } from "@/utils/month";
+import { currentMonth, type YearMonth } from "@/utils/month";
+import { MonthPicker } from "@/components/MonthPicker";
 import { formatValue } from "@/utils/currency";
 import { Colors } from "@/constants/colors";
 
@@ -24,7 +25,7 @@ export default function CreateSnapshotScreen() {
   const rate = currencyRates.get(accountCurrency) ?? 1;
 
   const [valueStr, setValueStr] = useState("");
-  const [month, setMonth] = useState(currentMonth());
+  const [month, setMonth] = useState<YearMonth>(currentMonth());
   const [errors, setErrors] = useState<{ value?: string }>({});
 
   const parsedValue = parseFloat(valueStr.replace(",", "."));
@@ -57,13 +58,7 @@ export default function CreateSnapshotScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Month</Text>
-      <TextInput
-        style={styles.input}
-        value={month}
-        onChangeText={setMonth}
-        placeholder="YYYY-MM"
-        placeholderTextColor={Colors.textTertiary}
-      />
+      <MonthPicker value={month} onChange={setMonth} />
 
       <Text style={styles.label}>Value ({accountCurrency})</Text>
       <TextInput
