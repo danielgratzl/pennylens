@@ -17,6 +17,30 @@ interface Props {
   currency?: string;
 }
 
+const NUM_SECTIONS = 4;
+
+function niceStep(rawStep: number, useKSteps: boolean): number {
+  if (rawStep <= 0) return 1;
+  if (useKSteps) {
+    // Round up to next 1000
+    return Math.max(1000, Math.ceil(rawStep / 1000) * 1000);
+  }
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const fraction = rawStep / magnitude;
+  let nice: number;
+  if (fraction <= 1) nice = 1;
+  else if (fraction <= 2) nice = 2;
+  else if (fraction <= 5) nice = 5;
+  else nice = 10;
+  return nice * magnitude;
+}
+
+function formatYLabel(label: string): string {
+  const val = Number(label);
+  if (val >= 1000) return `${Math.round(val / 1000)}k`;
+  return String(Math.round(val));
+}
+
 export function SnapshotChart({ snapshots, height = 200, redacted, currency }: Props) {
   if (snapshots.length === 0) {
     return (
@@ -34,6 +58,11 @@ export function SnapshotChart({ snapshots, height = 200, redacted, currency }: P
     dataPointText: redacted ? "" : formatValue(s.value, currency),
   }));
 
+  const maxVal = Math.max(...sorted.map((s) => s.value));
+  const useK = maxVal >= 1000;
+  const stepValue = niceStep(maxVal / NUM_SECTIONS, useK);
+  const maxValue = stepValue * NUM_SECTIONS;
+
   return (
     <View style={styles.container}>
       <LineChart
@@ -50,10 +79,14 @@ export function SnapshotChart({ snapshots, height = 200, redacted, currency }: P
 
         hideRules
         hideYAxisText={redacted}
+        formatYLabel={formatYLabel}
         yAxisTextStyle={styles.axisText}
         xAxisLabelTextStyle={styles.axisLabel}
+        initialSpacing={30}
         spacing={60}
-        noOfSections={4}
+        noOfSections={NUM_SECTIONS}
+        maxValue={maxValue}
+        stepValue={stepValue}
         scrollToEnd
       />
     </View>
