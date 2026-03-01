@@ -113,6 +113,24 @@ function useMigrations() {
           );
         `);
 
+        expoDb.execSync(`
+          CREATE TABLE IF NOT EXISTS "currency" (
+            "code" text PRIMARY KEY NOT NULL,
+            "name" text NOT NULL,
+            "rate" real NOT NULL
+          );
+        `);
+
+        // Add currency column to investment_account (idempotent)
+        try {
+          expoDb.execSync(`ALTER TABLE "investment_account" ADD COLUMN "currency" text NOT NULL DEFAULT 'CHF'`);
+        } catch (_) {
+          // Column already exists
+        }
+
+        // Seed base_currency for existing installs (idempotent)
+        expoDb.execSync(`INSERT OR IGNORE INTO "app_meta" ("key", "value") VALUES ('base_currency', 'CHF')`);
+
         // Seed default data
         await seedDatabase();
 
@@ -206,6 +224,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="settings/categories"
           options={{ title: "Categories", presentation: "modal" }}
+        />
+        <Stack.Screen
+          name="settings/currencies"
+          options={{ title: "Currencies", presentation: "modal" }}
         />
       </Stack>
     </>

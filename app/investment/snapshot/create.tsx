@@ -2,11 +2,20 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { addSnapshot } from "@/hooks/useInvestmentAccounts";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { db } from "@/db";
+import { investmentAccount } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { currentMonth } from "@/utils/month";
 import { Colors } from "@/constants/colors";
 
 export default function CreateSnapshotScreen() {
   const { accountId } = useLocalSearchParams<{ accountId: string }>();
+  const { data: accountData } = useLiveQuery(
+    db.select({ currency: investmentAccount.currency }).from(investmentAccount).where(eq(investmentAccount.id, accountId ?? "")),
+    [accountId]
+  );
+  const accountCurrency = accountData?.[0]?.currency ?? "CHF";
   const [valueStr, setValueStr] = useState("");
   const [month, setMonth] = useState(currentMonth());
   const [errors, setErrors] = useState<{ value?: string }>({});
@@ -46,7 +55,7 @@ export default function CreateSnapshotScreen() {
         placeholderTextColor={Colors.textTertiary}
       />
 
-      <Text style={styles.label}>Value (CHF)</Text>
+      <Text style={styles.label}>Value ({accountCurrency})</Text>
       <TextInput
         style={[styles.input, errors.value && styles.inputError]}
         value={valueStr}

@@ -37,4 +37,9 @@ export async function seedDatabase() {
     key: "device_id",
     value: generateId(),
   });
+
+  await db.insert(appMeta).values({
+    key: "base_currency",
+    value: "CHF",
+  });
 }

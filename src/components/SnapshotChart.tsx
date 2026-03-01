@@ -14,9 +14,10 @@ interface Props {
   snapshots: Snapshot[];
   height?: number;
   redacted?: boolean;
+  currency?: string;
 }
 
-export function SnapshotChart({ snapshots, height = 200, redacted }: Props) {
+export function SnapshotChart({ snapshots, height = 200, redacted, currency }: Props) {
   if (snapshots.length === 0) {
     return (
       <View style={styles.empty}>
@@ -30,7 +31,7 @@ export function SnapshotChart({ snapshots, height = 200, redacted }: Props) {
   const chartData = sorted.map((s) => ({
     value: s.value,
     label: displayMonth(s.snapshotMonth),
-    dataPointText: redacted ? "" : formatValue(s.value),
+    dataPointText: redacted ? "" : formatValue(s.value, currency),
   }));
 
   return (

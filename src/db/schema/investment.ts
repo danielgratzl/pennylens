@@ -11,6 +11,7 @@ export const investmentAccount = sqliteTable("investment_account", {
   name: text("name").notNull(),
   accountType: text("account_type"),
   institution: text("institution"),
+  currency: text("currency").notNull().default("CHF"),
 });
 
 export const accountSnapshot = sqliteTable("account_snapshot", {

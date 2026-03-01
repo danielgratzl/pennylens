@@ -96,6 +96,15 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.row}
+        onPress={() => router.push("/settings/currencies")}
+      >
+        <Ionicons name="cash-outline" size={20} color={Colors.textSecondary} />
+        <Text style={styles.rowText}>Currencies</Text>
+        <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.row} onPress={handleExport} disabled={busy}>
         <Ionicons name="push-outline" size={20} color={Colors.textSecondary} />
         <Text style={styles.rowText}>Export Database</Text>

@@ -2,6 +2,10 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSnapshots, deleteInvestmentAccount, deleteSnapshot } from "@/hooks/useInvestmentAccounts";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { db } from "@/db";
+import { investmentAccount } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { SnapshotChart } from "@/components/SnapshotChart";
 import { Colors } from "@/constants/colors";
 import { formatValue } from "@/utils/currency";
@@ -10,6 +14,11 @@ import { displayMonth } from "@/utils/month";
 export default function InvestmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { snapshots } = useSnapshots(id ?? "");
+  const { data: accountData } = useLiveQuery(
+    db.select({ currency: investmentAccount.currency }).from(investmentAccount).where(eq(investmentAccount.id, id ?? "")),
+    [id]
+  );
+  const accountCurrency = accountData?.[0]?.currency ?? "CHF";
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -56,7 +65,7 @@ export default function InvestmentDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <SnapshotChart snapshots={snapshots} height={200} />
+      <SnapshotChart snapshots={snapshots} height={200} currency={accountCurrency} />
 
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Snapshots</Text>
@@ -76,7 +85,7 @@ export default function InvestmentDetailScreen() {
             onLongPress={() => handleDeleteSnapshot(item.id, item.snapshotMonth)}
           >
             <Text style={styles.month}>{displayMonth(item.snapshotMonth)}</Text>
-            <Text style={styles.value}>{formatValue(item.value)}</Text>
+            <Text style={styles.value}>{formatValue(item.value, accountCurrency)}</Text>
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.list}

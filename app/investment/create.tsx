@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useAppStore } from "@/store/appStore";
 import { usePersons } from "@/hooks/usePersons";
 import { createInvestmentAccount } from "@/hooks/useInvestmentAccounts";
+import { useBaseCurrency, useCurrencies } from "@/hooks/useCurrencies";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "@/db";
 import { category } from "@/db/schema";
@@ -16,12 +17,16 @@ export default function CreateInvestmentScreen() {
   const { data: categories } = useLiveQuery(
     db.select().from(category).where(eq(category.type, "investment"))
   );
+  const baseCurrency = useBaseCurrency();
+  const { currencies } = useCurrencies();
+  const availableCurrencies = [baseCurrency, ...currencies.map((c) => c.code)];
 
   const [name, setName] = useState("");
   const [accountType, setAccountType] = useState("");
   const [institution, setInstitution] = useState("");
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string }>({});
 
   const validate = () => {
@@ -42,6 +47,7 @@ export default function CreateInvestmentScreen() {
         name: name.trim(),
         accountType: accountType.trim() || undefined,
         institution: institution.trim() || undefined,
+        currency: selectedCurrency ?? baseCurrency,
       });
       router.back();
     } catch (e: any) {
@@ -78,6 +84,33 @@ export default function CreateInvestmentScreen() {
         placeholder="e.g. Trade Republic"
         placeholderTextColor={Colors.textTertiary}
       />
+
+      {availableCurrencies.length > 1 && (
+        <>
+          <Text style={styles.label}>Currency</Text>
+          <View style={styles.chips}>
+            {availableCurrencies.map((code) => (
+              <TouchableOpacity
+                key={code}
+                style={[
+                  styles.chip,
+                  (selectedCurrency ?? baseCurrency) === code && styles.chipActive,
+                ]}
+                onPress={() => setSelectedCurrency(code)}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    (selectedCurrency ?? baseCurrency) === code && styles.chipTextActive,
+                  ]}
+                >
+                  {code}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
+      )}
 
       <Text style={styles.label}>Person</Text>
       <View style={styles.chips}>

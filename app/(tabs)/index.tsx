@@ -7,6 +7,7 @@ import { useMonthlySummary } from "@/hooks/useMonthlySummary";
 import { usePortfolios } from "@/hooks/usePortfolios";
 import { usePersons } from "@/hooks/usePersons";
 import { useInvestmentTotal, useInvestmentHistory } from "@/hooks/useInvestmentAccounts";
+import { useBaseCurrency, useCurrencyRates } from "@/hooks/useCurrencies";
 import { SnapshotChart } from "@/components/SnapshotChart";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
 import { SummaryCard } from "@/components/SummaryCard";
@@ -18,9 +19,11 @@ export default function DashboardScreen() {
   const { activePortfolioId, viewMode, setActivePortfolio, privacyMode, togglePrivacyMode } = useAppStore();
   const { portfolios } = usePortfolios();
   const { persons } = usePersons(activePortfolioId);
+  const baseCurrency = useBaseCurrency();
+  const currencyRates = useCurrencyRates();
   const summary = useMonthlySummary(activePortfolioId, viewMode);
-  const { total: investmentTotal } = useInvestmentTotal(activePortfolioId, viewMode, persons.length);
-  const { history: investmentHistory } = useInvestmentHistory(activePortfolioId, viewMode, persons.length);
+  const { total: investmentTotal } = useInvestmentTotal(activePortfolioId, viewMode, persons.length, currencyRates);
+  const { history: investmentHistory } = useInvestmentHistory(activePortfolioId, viewMode, persons.length, currencyRates);
 
   useEffect(() => {
     if (!activePortfolioId && portfolios.length > 0) {
@@ -62,21 +65,21 @@ export default function DashboardScreen() {
         <SummaryCard
           label="Income"
           value={formatCentsShort(summary.totalIncome)}
-          unit="CHF"
+          unit={baseCurrency}
           color={Colors.income}
           redacted={privacyMode}
         />
         <SummaryCard
           label="Costs"
           value={formatCentsShort(summary.totalCosts)}
-          unit="CHF"
+          unit={baseCurrency}
           color={Colors.expense}
           redacted={privacyMode}
         />
         <SummaryCard
           label="Untracked"
           value={formatCentsShort(summary.untracked)}
-          unit="CHF"
+          unit={baseCurrency}
           color={Colors.textTertiary}
           info="Income minus fixed costs"
           redacted={privacyMode}
@@ -86,7 +89,7 @@ export default function DashboardScreen() {
       <SummaryCard
         label="Investments"
         value={formatValueShort(investmentTotal)}
-        unit="CHF"
+        unit={baseCurrency}
         color={Colors.investment}
         redacted={privacyMode}
       />
@@ -94,7 +97,7 @@ export default function DashboardScreen() {
       {investmentHistory.length > 0 && (
         <View style={styles.chartSection}>
           <Text style={styles.chartTitle}>Investment History</Text>
-          <SnapshotChart snapshots={investmentHistory} height={180} redacted={privacyMode} />
+          <SnapshotChart snapshots={investmentHistory} height={180} redacted={privacyMode} currency={baseCurrency} />
         </View>
       )}
     </ScrollView>

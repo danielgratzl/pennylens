@@ -24,7 +24,7 @@ export function useInvestmentAccounts(portfolioId: string | null) {
   return { accounts: data ?? [] };
 }
 
-export function useInvestmentTotal(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1) {
+export function useInvestmentTotal(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1, currencyRates?: Map<string, number>) {
   const { data: allSnapshots } = useLiveQuery(
     db
       .select({
@@ -32,6 +32,7 @@ export function useInvestmentTotal(portfolioId: string | null, viewMode: string 
         snapshotMonth: accountSnapshot.snapshotMonth,
         value: accountSnapshot.value,
         personId: investmentAccount.personId,
+        currency: investmentAccount.currency,
       })
       .from(accountSnapshot)
       .innerJoin(investmentAccount, eq(accountSnapshot.accountId, investmentAccount.id))
@@ -45,8 +46,10 @@ export function useInvestmentTotal(portfolioId: string | null, viewMode: string 
     const latestMonth = new Map<string, string>();
     const latestValue = new Map<string, number>();
     const accountPerson = new Map<string, string | null>();
+    const accountCurrency = new Map<string, string>();
     for (const s of snapshots) {
       accountPerson.set(s.accountId, s.personId);
+      accountCurrency.set(s.accountId, s.currency);
       const cur = latestMonth.get(s.accountId);
       if (!cur || s.snapshotMonth > cur) {
         latestMonth.set(s.accountId, s.snapshotMonth);
@@ -56,21 +59,24 @@ export function useInvestmentTotal(portfolioId: string | null, viewMode: string 
     let sum = 0;
     for (const [accountId, value] of latestValue) {
       const pid = accountPerson.get(accountId);
+      const cur = accountCurrency.get(accountId) ?? "CHF";
+      const rate = currencyRates?.get(cur) ?? 1;
+      const converted = value * rate;
       if (viewMode === "combined") {
-        sum += value;
+        sum += converted;
       } else if (pid === viewMode) {
-        sum += value;
+        sum += converted;
       } else if (pid === null && personCount > 0) {
-        sum += value / personCount;
+        sum += converted / personCount;
       }
     }
     return sum;
-  }, [allSnapshots, viewMode, personCount]);
+  }, [allSnapshots, viewMode, personCount, currencyRates]);
 
   return { total };
 }
 
-export function useInvestmentHistory(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1) {
+export function useInvestmentHistory(portfolioId: string | null, viewMode: string = "combined", personCount: number = 1, currencyRates?: Map<string, number>) {
   const { data: allSnapshots } = useLiveQuery(
     db
       .select({
@@ -78,6 +84,7 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
         snapshotMonth: accountSnapshot.snapshotMonth,
         value: accountSnapshot.value,
         personId: investmentAccount.personId,
+        currency: investmentAccount.currency,
       })
       .from(accountSnapshot)
       .innerJoin(investmentAccount, eq(accountSnapshot.accountId, investmentAccount.id))
@@ -89,10 +96,12 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
     const snapshots = allSnapshots ?? [];
     if (snapshots.length === 0) return [];
 
-    // Build person mapping per account
+    // Build person and currency mapping per account
     const accountPerson = new Map<string, string | null>();
+    const accountCurrency = new Map<string, string>();
     for (const s of snapshots) {
       accountPerson.set(s.accountId, s.personId);
+      accountCurrency.set(s.accountId, s.currency);
     }
 
     // Filter accounts based on viewMode
@@ -128,6 +137,8 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
       for (const [accountId, monthMap] of accountMonths) {
         const pid = accountPerson.get(accountId);
         const isShared = pid === null;
+        const cur = accountCurrency.get(accountId) ?? "CHF";
+        const rate = currencyRates?.get(cur) ?? 1;
         // Find the latest value at or before this month
         let val = 0;
         for (const m of sortedMonths) {
@@ -138,13 +149,13 @@ export function useInvestmentHistory(portfolioId: string | null, viewMode: strin
         if (isShared && viewMode !== "combined" && personCount > 0) {
           val = val / personCount;
         }
-        total += val;
+        total += val * rate;
       }
       result.push({ snapshotMonth: month, value: total });
     }
 
     return result;
-  }, [allSnapshots, viewMode, personCount]);
+  }, [allSnapshots, viewMode, personCount, currencyRates]);
 
   return { history };
 }
@@ -169,6 +180,7 @@ export async function createInvestmentAccount(data: {
   name: string;
   accountType?: string;
   institution?: string;
+  currency?: string;
 }) {
   const id = generateId();
   await db.insert(investmentAccount).values({
@@ -179,6 +191,7 @@ export async function createInvestmentAccount(data: {
     name: data.name,
     accountType: data.accountType ?? null,
     institution: data.institution ?? null,
+    currency: data.currency ?? "CHF",
   });
   return id;
 }
