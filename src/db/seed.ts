@@ -31,15 +31,15 @@ export async function seedDatabase() {
   await db.insert(appMeta).values({
     key: "schema_version",
     value: "1",
-  });
+  }).onConflictDoNothing();
 
   await db.insert(appMeta).values({
     key: "device_id",
     value: generateId(),
-  });
+  }).onConflictDoNothing();
 
   await db.insert(appMeta).values({
     key: "base_currency",
     value: "CHF",
-  });
+  }).onConflictDoNothing();
 }

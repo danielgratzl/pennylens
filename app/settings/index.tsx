@@ -13,7 +13,7 @@ import Constants from "expo-constants";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Colors } from "@/constants/colors";
 import { useAppStore } from "@/store/appStore";
-import { exportDatabase, importDatabase, saveImportTimestamp, useLastImportDate } from "@/utils/sync";
+import { exportDatabase, importDatabase, resetDatabase, saveImportTimestamp, useLastImportDate } from "@/utils/sync";
 
 export default function SettingsScreen() {
   const { activePortfolioId, bumpDbVersion } = useAppStore();
@@ -51,6 +51,31 @@ export default function SettingsScreen() {
               }
             } catch (e: any) {
               Alert.alert("Import Error", e.message ?? "Unknown error");
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      "Reset All Data",
+      "This will permanently delete all portfolios, transactions, and settings. The app will restart with default data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await resetDatabase();
+              bumpDbVersion();
+            } catch (e: any) {
+              Alert.alert("Reset Error", e.message ?? "Unknown error");
             } finally {
               setBusy(false);
             }
@@ -115,6 +140,11 @@ export default function SettingsScreen() {
         <Ionicons name="download-outline" size={20} color={Colors.textSecondary} />
         <Text style={styles.rowText}>Import Database</Text>
         <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.row} onPress={handleReset} disabled={busy}>
+        <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+        <Text style={[styles.rowText, { color: Colors.danger }]}>Reset All Data</Text>
       </TouchableOpacity>
 
       {lastImportDate && (

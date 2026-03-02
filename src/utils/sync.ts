@@ -75,6 +75,18 @@ export async function saveImportTimestamp() {
     .onConflictDoUpdate({ target: appMeta.key, set: { value: now } });
 }
 
+export async function resetDatabase(): Promise<void> {
+  closeDb();
+
+  const dbFile = new File(DB_DIR_URI + DB_NAME);
+  const walFile = new File(DB_DIR_URI + DB_NAME + "-wal");
+  const shmFile = new File(DB_DIR_URI + DB_NAME + "-shm");
+
+  if (dbFile.exists) dbFile.delete();
+  if (walFile.exists) walFile.delete();
+  if (shmFile.exists) shmFile.delete();
+}
+
 export function useLastImportDate(): string | null {
   const { data } = useLiveQuery(
     db.select().from(appMeta).where(eq(appMeta.key, "lastImportDate"))
